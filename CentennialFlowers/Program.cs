@@ -4,9 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-
+using System.Runtime.Serialization.Formatters.Binary;
 using static System.Console;
-using System.Web.Script.Serialization;
 
 namespace CentennialFlowers
 {
@@ -23,60 +22,126 @@ namespace CentennialFlowers
 
         static void Save()
         {
-            JavaScriptSerializer serializer = new JavaScriptSerializer();
+            BinaryFormatter formatter = new BinaryFormatter();
 
-            FileStream fileStream = new FileStream("order.json", FileMode.Create, FileAccess.Write);
+            FileStream fileStream = new FileStream("orders.bin", FileMode.Create, FileAccess.Write);
             StreamWriter streamWriter = new StreamWriter(fileStream);
 
-            Order orderOne = new Order();
+            WriteLine("Enter the Number of Orders to process:");
+            int numberOfOrders = int.Parse(ReadLine());
 
-            WriteLine("Enter the Details of the Order");
+            Order[] orders = new Order[numberOfOrders];
 
-            Write(" - Order Number: ");
-            orderOne.OrderNumber = int.Parse(ReadLine());
+            for (int i = 0; i < numberOfOrders; i++)
 
-            Write(" - Customer Name: ");
-            orderOne.CustomerName = ReadLine();
+            {
+                
+                    WriteLine("Enter the Details of the Order {0}", i + 1);
 
-            Write(" - Arrangement: ");
-            orderOne.Arrangement = ReadLine();
+                    Order orderOne = new Order();
+                bool isValid = false;
+                while (!isValid)
+                {
+                    try
+                    {
+                        Write(" - Order Number: ");
+                        orderOne.OrderNumber = int.Parse(ReadLine());
+                        isValid = true;
+                    }
+                    catch 
+                    {
+                        WriteLine("Please enter a valid number");
+                    }
+                }
 
-            Write(" - Quantity: ");
-            orderOne.Quantity = int.Parse(ReadLine());
+                
 
-            Write(" - Unit Price: ");
-            orderOne.UnitPrice = double.Parse(ReadLine());
+                Write(" - Customer Name: ");
+                    orderOne.CustomerName = ReadLine();
 
-            streamWriter.Write(serializer.Serialize(orderOne));
+                    Write(" - Arrangement: ");
+                    orderOne.Arrangement = ReadLine();
+
+                 isValid = false;
+                while (!isValid)
+                {
+                    try
+                    {
+                        Write(" - Quantity: ");
+                        orderOne.Quantity = int.Parse(ReadLine());
+                        isValid = true;
+                    }
+                    catch (Exception e)
+                    {
+                        WriteLine(e.Message + "Please enter a valid number");
+                    }
+                }
+
+                isValid = false;
+                while(!isValid)
+                {
+                    try
+                    {
+                        Write(" - Unit Price: ");
+                        orderOne.UnitPrice = double.Parse(ReadLine());
+                        isValid = true;
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Invalid, please enter again");
+                    }
+                }
+
+                    
+
+                    orders[i] = orderOne;
+              
+            }
+
+            formatter.Serialize(streamWriter.BaseStream, orders);
 
             streamWriter.Close();
             fileStream.Close();
 
-            WriteLine("Order information has been saved to {0} !", Path.GetFileName(fileStream.Name));
-        }
+            WriteLine("Number of Order(s) saved: {0} - File Name: {1} !", numberOfOrders, Path.GetFileName(fileStream.Name));
 
+
+        }
         static void Read()
         {
-            JavaScriptSerializer serializer = new JavaScriptSerializer();
+            BinaryFormatter formatter = new BinaryFormatter();
 
-            FileStream fileStream = new FileStream("order.json", FileMode.Open, FileAccess.Read);
+            FileStream fileStream = new FileStream("orders.bin  ", FileMode.Open, FileAccess.Read);
             StreamReader streamReader = new StreamReader(fileStream);
 
-            Order orderOne = new Order();
+            Order[] orders;
 
-            orderOne = serializer.Deserialize<Order>(streamReader.ReadToEnd());
+            // orders = serializer.Deserialize<Order[]>(streamReader.ReadToEnd());
+            orders = (Order[])formatter.Deserialize(streamReader.BaseStream);
 
-            WriteLine("Order Information");
-            WriteLine("--------------------");
-            WriteLine("Order Number: {0}", orderOne.OrderNumber);
-            WriteLine("Customer Name: {0}", orderOne.CustomerName);
-            WriteLine("Arrangement: {0}", orderOne.Arrangement);
-            WriteLine("Quantity: {0}", orderOne.Quantity);
-            WriteLine("UnitPrice: {0:C}", orderOne.UnitPrice);
-            WriteLine("Total Price: {0:C}", orderOne.TotalPrice);
+            int orderIndex = 0;
+            double totalPriceSum = 0;
 
-            streamReader.Close();
+            foreach (Order orderOne in orders)
+            {
+                orderIndex++;
+                                WriteLine("Order {0} Information", orderIndex);
+                WriteLine("--------------------");
+                WriteLine("Order Number: {0}", orderOne.OrderNumber);
+                WriteLine("Customer Name: {0}", orderOne.CustomerName);
+                WriteLine("Arrangement: {0}", orderOne.Arrangement);
+                WriteLine("Quantity: {0}", orderOne.Quantity);
+                WriteLine("UnitPrice: {0:C}", orderOne.UnitPrice);
+                WriteLine("Total Price: {0:C}", orderOne.TotalPrice);
+                totalPriceSum += orderOne.TotalPrice;
+            }
+
+                streamReader.Close();
             fileStream.Close();
+
+            WriteLine("--------------------");
+            WriteLine("Total Number of Orders: {0}", orders.Length);
+            WriteLine("Grand Total Price: {0:C}", totalPriceSum);
         }
     }
 }
